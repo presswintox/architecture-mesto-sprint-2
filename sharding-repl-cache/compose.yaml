@@ -1,9 +1,8 @@
+x-mongo-template: &mongo-template
+  image: dh-mirror.gitverse.ru/mongo:latest
+  restart: always
+
 services:
-  x-mongo-template: &mongo-template
-    image: dh-mirror.gitverse.ru/mongo:latest
-    restart: always
-
-
   configSrv:
     <<: *mongo-template
     container_name: sharding-repl-cache-configSrv
@@ -211,7 +210,6 @@ services:
       MONGODB_DATABASE_NAME: "somedb"
       REDIS_URL: "redis://sharding-repl-cache-redis_1:6379" 
     
-
 
 networks:
   app-network:

@@ -87,6 +87,7 @@ async def root():
         collections[collection_name] = {
             "documents_count": await collection.count_documents({})
         }
+        
     try:
         replica_status = await client.admin.command("replSetGetStatus")
         replica_status = json.dumps(replica_status, indent=2, default=str)
@@ -103,7 +104,22 @@ async def root():
         shards_list = await client.admin.command("listShards")
         shards = {}
         for shard in shards_list.get("shards", {}):
-            shards[shard["_id"]] = shard["host"]
+            shard_info = {"host":shard["host"]}
+            
+            host_string = shard["host"]
+            if "/" in host_string:
+                _, hosts = host_string.split("/", 1)
+                host_list = hosts.split(",")
+                replica_count = len(host_list)
+                shard_info["replica_count"] = replica_count
+            
+            for collection_name in collection_names:
+                collection = db.get_collection(collection_name)
+                stats = await collection.aggregate([{"$collStats": {"count": {}}}]).to_list(length=None)
+                for stat in stats:
+                    if stat.get("shard") == shard["_id"]:
+                        shard_info["documents_count"] = stat["count"]
+            shards[shard["_id"]] = shard_info
 
     cache_enabled = False
     if REDIS_URL:

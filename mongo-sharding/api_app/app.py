@@ -103,7 +103,14 @@ async def root():
         shards_list = await client.admin.command("listShards")
         shards = {}
         for shard in shards_list.get("shards", {}):
-            shards[shard["_id"]] = shard["host"]
+            shard_info = {"host":shard["host"]}
+            for collection_name in collection_names:
+                collection = db.get_collection(collection_name)
+                stats = await collection.aggregate([{"$collStats": {"count": {}}}]).to_list(length=None)
+                for stat in stats:
+                    if stat.get("shard") == shard["_id"]:
+                        shard_info["documents_count"] = stat["count"]
+            shards[shard["_id"]] = shard_info
 
     cache_enabled = False
     if REDIS_URL:
