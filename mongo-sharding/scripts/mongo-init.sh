@@ -11,6 +11,9 @@ exit();
 
 EOF
 
+# Нужна пауза для роутера, чтобы он знал о конфигурации шардов
+sleep 10
+
 docker compose exec -T shard1 mongosh --port 27018 <<EOF
 rs.initiate(
     {
